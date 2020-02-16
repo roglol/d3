@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    .links line {
+  stroke: #999;
+  stroke-opacity: 0.6;
+}
+.nodes circle {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.text {
+  font-family: sans-serif;
+  font-size: 10px;
+}
+</style>
+<svg width="1300" height="800" id="pack"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script>
+var data = {
+  "name": "A1",
+  "children": [
+    {
+      "name": "a",
+      "children": [
+        {
+          "name": "A",
+          "value": 100,
+          "project":"a"
+        },
+        {
+          "name": "B",
+          "value": 100,
+          "project":"a"
+        }
+      ]
+    },
+    {
+      "name": "b",
+      "children":[
+      {
+          "name": "A",
+          "value": 100,
+          "project":"b"
+        },
+        {
+          "name": "B",
+          "value": 100,
+          "project":"b"
+        },
+        {
+          "name": "C",
+          "value": 100,
+          "project":"b"
+        }
+      ]
+    }
+  ]
+}
+
+let width = 1300;
+let height = 800;
+
+var color = d3.scaleOrdinal()
+  .domain([0,1,2])
+  .range([ "#F8766D", "#00BA38", "#619CFF"])
+
+  var x = d3.scaleOrdinal()
+  .domain([0,1,2])
+  .range([0, 200, 400])
+
+var root = d3.hierarchy(data);
+var handleEvents = function( selection ) {
+  selection.on('mouseover', function() {
+    let g = d3.select(this);
+    let n = g.select('.the-node');
+
+    if(n.classed('solid')) {
+      n.transition().duration(400)
+      .style('fill', "rgba(211,0,0,0.8)" )
+      .attr('r', 18);
+    } else {
+      n.transition().duration(400)
+      .style('fill', "rgba(211,0,0,0.8)" );
+    }
+    
+    g.select('.label')
+      .transition().duration(700)
+      .style('fill', 'white')
+    
+  })
+  .on('mouseout', function() {
+    let g = d3.select(this);
+    let n = g.select('.the-node');
+ 
+    if(n.classed('solid')) {
+      n.transition().duration(400)
+      .style('fill', "#696969" )
+      .attr('r',14);
+    }  else {
+     n.transition().duration(400)
+      .style('fill', "rgba(255,255,255,0.2)" )
+    }
+    g.select('.label')
+      .transition().duration(700)
+      .style('fill', "black")
+  });
+}      
+
+
+
+var packLayout = d3.pack();
+packLayout.size([1300,600]);
+packLayout.padding(10);
+
+root.sum(d => d.value);
+packLayout(root);
+
+var node = d3.select("#pack").append('g').attr('class', 'node')
+var packNodes = node
+.selectAll('circle')
+.data(root.descendants())
+.enter()
+.append('g')
+.attr('class',function(e){
+  if(e.data.project){
+    return e.data.project
+  }
+})
+.attr('cursor','pointer')
+.attr('transform', d => 'translate('+[d.x, d.y]+')')
+// .call(handleEvents)
+
+
+var circles = packNodes
+.append('circle')
+.attr('r', function(d){
+  return d.r
+})
+.style('fill', function(d){return color(d.height)})
+.style('stroke', '#2f2f2f')
+
+packNodes
+  .append('text')
+  .attr('class', 'label')
+  .attr('dy', 4 )
+  .attr('dx', 0 )
+  .text( d => d.children === undefined ? d.data.name : '');
+
+
+  var simulation = d3.forceSimulation()
+    .force("x", d3.forceX().strength(0.5).x( function(d){ return x(d.height) } ))
+    .force("y", d3.forceY().strength(0.1).y( height/2 ))
+    .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
+    .force("charge", d3.forceManyBody().strength(1)) // Nodes are attracted one each other of value is > 0
+    .force("collide", d3.forceCollide().strength(.1).radius(52).iterations(1)) // Force that avoids circle overlapping
+
+// Apply these forces to the nodes and update their positions.
+// Once the force algorithm is happy with positions ('alpha' value is low enough), simulations will stop.
+// simulation
+//     .nodes(root.descendants())
+    // simulation
+    // .nodes(root.descendants())
+    // .on("tick", function(d){
+    //   packNodes
+    //  .attr("transform", function(d){ 
+    //    console.log(d)
+    //    return "translate(" + d.x + "," + d.y + ")"
+    //   })
+    // });
+  var drag_handler = d3.drag()
+	.on("drag", drag_drag)
+	.on("end", drag_end);	
+
+
+//same as using .call on the node variable as in https://bl.ocks.org/mbostock/4062045 
+ drag_handler(packNodes)
+//drag handler
+//d is the node 
+
+function drag_drag(d) {
+  if(!d.parent){
+    return
+  }
+  const persons = d3.selectAll(`g.${d.data.name}`)._groups[0]
+
+  d3.select(this).attr("transform", function(d){ 
+    let x = d3.event.x-d.x
+    let y = d3.event.y-d.y
+
+    persons.forEach(person =>{
+    const employee = d3.select(person)
+   employee.attr("transform", function(d){ 
+    d.x = d.x + x;
+    d.y = d.y + y;
+     return "translate(" + (d.x + x)+ "," + (d.y + y) +")"
+     })
+  })
+  d.x = d3.event.x;
+  d.y = d3.event.y;
+    return "translate(" + d3.event.x + "," + d3.event.y + ")"
+    })
+}
+function drag_end(d) {
+  if(!d.parent){
+    return
+  }
+
+}
+</script>

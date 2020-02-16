@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.active {
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+.circle {
+  pointer-events: all;
+  stroke: none;
+  stroke-width: 40px;
+}
+
+</style>
+
+<body>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+<script>
+
+var margin = {top: 100, right: 100, bottom: 100, left: 100},
+    width = window.innerWidth - margin.left - margin.right,
+    height =  window.innerHeight- margin.top - margin.bottom;
+
+    var data = [{ "name": "A", "group": 1, 'x': Math.round(Math.random() * (width)),'y':Math.round(Math.random() * (height)), value: 25}, 
+             { "name": "B", "group": 2, 'x': Math.round(Math.random() * (width)),'y':Math.round(Math.random() * (height)), value: 25},
+            { "name": "G", "group": 2, 'x': Math.round(Math.random() * (width)),'y':Math.round(Math.random() * (height)), value: 25},
+            {'name': 'C', 'group': 1, 'x': Math.round(Math.random() * (width)),'y':Math.round(Math.random() * (height)), value: 25},
+            { "name": "M", "group": 3, 'x': Math.round(Math.random() * (width)),'y':Math.round(Math.random() * (height)), value: 25}, 
+             { "name": "P", "group": 4, 'x': Math.round(Math.random() * (width)),'y':Math.round(Math.random() * (height)), value: 25},
+             {"name":'Z', 'group': 5, 'x': Math.round(Math.random() * (width)),'y':Math.round(Math.random() * (height)), value: 25}]
+
+ // A scale that gives a X target position for each group
+var x = d3.scaleOrdinal()
+  .domain([1, 2, 3, 4,5])
+  .range([0, 200, 400, 600, 800])
+
+// A color scale
+var color = d3.scaleOrdinal()
+  .domain([1, 2, 3, 4, 5])
+  .range([ "#F8766D", "#00BA38", "#619CFF", '#FF0000', 'yellow'])
+
+// var rectangles = d3.range(7).map(function() {
+//   return {
+//     x: Math.round(Math.random() * (width)),
+//     y: Math.round(Math.random() * (height)),
+//     value: 25
+//   };
+// });
+// var color = d3.scaleOrdinal()
+//             .range(["red", "green", "blue", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+var group = svg.selectAll('g')
+  .data(data)
+  .enter().append("g")
+  .attr("transform", 
+        "translate(" + margin.left + "," + margin.top + ")")
+  .call(d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended));
+
+group.append("circle")
+     .attr("r", 50)
+     .attr("cx", function(d) { return d.x; })
+     .attr("cy", function(d) { return d.y; })
+     .style("fill", function(d){ 
+      return color(d.group)
+      })
+    .style("fill-opacity", 0.8)
+    .attr("stroke", "black")
+    .style("stroke-width", 4)
+  
+group.append("text")
+
+     .attr("x", function(d) {
+          return d.x; })
+     .attr("y", function(d) { return d.y - 55; })
+       .attr("text-anchor", "start")
+       .style("fill", "steelblue")
+       .text(function(d) { return d.value; });  
+    
+group.append('circle')
+.attr("r", 10)
+     .attr("cx", function(d) { return d.x; })
+     .attr("cy", function(d) { return d.y; })
+     .style("fill", function(d){ 
+      return color(d.group)
+      })
+    .style("fill-opacity", 0.8)
+    .attr("stroke", "black")
+    .style("stroke-width", 4)
+function dragstarted(d) {
+    console.log(d)
+    d.fx = d.x;
+    d.fy = d.y;
+  d3.select(this).raise().classed("active", true);
+}
+
+function dragged(d) {
+  d3.select(this).select("text")
+    .attr("x", d.x = d3.event.x)
+    .attr("y", d.y = d3.event.y - 55);
+  d3.select(this).select("circle")
+    .attr("cx", d.fx = d3.event.x)
+    .attr("cy", d.fy = d3.event.y);
+}
+
+function dragended(d) {
+  d3.select(this).classed("active", false);
+}
+
+</script>
+</body>
